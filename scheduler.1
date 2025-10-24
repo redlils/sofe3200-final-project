@@ -4,5 +4,25 @@ scheduler - schedule system tasks using .yaml files
 .SH SYNOPSIS
 .B scheduler
 [
-.I OPTION
+.I COMMAND
 ]
+.SH COMMANDS
+.B --add
+.I name path
+.RS
+Adds a new scheduled task to the scheduler system.
+.I name
+is a unique, identifiable name for the task,
+.I path
+is the path to a .yaml file containing a valid task configuration.
+
+.SH EXIT STATUS
+.TP
+.B 0
+The requested action was successfully performed.
+.TP
+.B 1
+Problems were encountered when trying to parse the command line.
+.TP
+.B 2
+Problems were encountered when trying to perform the action.
