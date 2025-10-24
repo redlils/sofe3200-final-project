@@ -15,7 +15,13 @@
 # Globals
 script_name=$(basename $0) # Use basename for if this script is being read through a symlink
 version=$(git tag --points-at HEAD)+$(git rev-parse --short HEAD)
+verbose=true
 
+print_verbose() {
+  if [ "$verbose" = true ]; then
+    printf "%s\n" "$1"
+  fi
+}
 # Functions
 print_help() {
   printf "Usage: $script_name [COMMAND]
