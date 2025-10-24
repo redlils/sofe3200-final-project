@@ -40,7 +40,7 @@ add_task() {
 if [ $# -eq 0 ]; then
   printf "$script_name: need --add, --remove, or --list\n\n"
   print_usage_info 
-  exit 2
+  exit 1
 fi
 
 # Handle arguments
@@ -53,6 +53,7 @@ elif [ "$1" = "--add" ]; then
   if [ $# -lt 3 ]; then
     printf "$script_name: --add needs <name> <path>\n\n"
     print_usage_info 
+    exit 1
   fi
   add_task
 else
