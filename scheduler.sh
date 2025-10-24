@@ -14,6 +14,7 @@
 
 # Globals
 script_name=$(basename $0) # Use basename for if this script is being read through a symlink
+version=$(git tag --points-at HEAD)+$(git rev-parse --short HEAD)
 
 # Functions
 print_help() {
@@ -47,6 +48,10 @@ fi
 # --help
 if [ "$1" = "--help" ]; then
   print_help;
+elif [ "$1" = "--version" ]; then
+  echo "$script_name"
+  echo "Version: $version"
+  exit 0
 # --add
 elif [ "$1" = "--add" ]; then
   # Verify proper argument length
@@ -57,6 +62,6 @@ elif [ "$1" = "--add" ]; then
   fi
   add_task
 else
-  
+  echo ":3"
 fi
 
