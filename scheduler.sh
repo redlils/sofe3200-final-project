@@ -14,6 +14,7 @@
 
 # Globals
 script_name=$(basename $0) # Use basename for if this script is being read through a symlink
+script_name=$(basename "$0") # Use basename for if this script is being read through a symlink
 version=$(git tag --points-at HEAD)+$(git rev-parse --short HEAD)
 verbose=true
 
@@ -25,6 +26,7 @@ print_verbose() {
 # Functions
 print_help() {
   printf "Usage: $script_name [COMMAND]
+  printf "%s\n" "Usage: $script_name [COMMAND]
 
 Commands:
   --add <name> <path>   add a new scheduled task
@@ -36,6 +38,7 @@ Commands:
 
 print_usage_info() {
   printf "Use $script_name --help for program usage information\n"
+  printf "%s\n" "Use $script_name --help for program usage information"
 }
 
 # Command handlers
@@ -46,6 +49,7 @@ add_task() {
 
 if [ $# -eq 0 ]; then
   printf "$script_name: need --add, --remove, or --list\n\n" 1>&2
+  printf "%s\n\n" "$script_name: need --update, --run-workflow, or --list" 1>&2
   print_usage_info 1>&2
   exit 1
 fi
@@ -63,6 +67,7 @@ elif [ "$1" = "--add" ]; then
   # Verify proper argument length
   if [ $# -lt 3 ]; then
     printf "$script_name: --add needs <name> <path>\n\n" 1>&2
+    printf "%s" "$script_name: --remove needs <name>\n\n" 1>&2
     print_usage_info 1>&2
     exit 1
   fi
