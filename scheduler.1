@@ -1,28 +1,44 @@
-.TH scheduler 1 "2025-10-24" "version 1.0"
-.SH NAME
-scheduler - schedule system tasks using .yaml files
-.SH SYNOPSIS
-.B scheduler
-[
-.I COMMAND
-]
-.SH COMMANDS
-.B --add
-.I name path
-.RS
-Adds a new scheduled task to the scheduler system.
-.I name
-is a unique, identifiable name for the task,
-.I path
-is the path to a .yaml file containing a valid task configuration.
+\" Header information
+.Dd October 27th, 2025  \" Last updated date
+.Dt scheduler 1         \" program name & man section
+.Os version 1.0         \" version number
 
-.SH EXIT STATUS
-.TP
-.B 0
-The requested action was successfully performed.
-.TP
-.B 1
-Problems were encountered when trying to parse the command line.
-.TP
-.B 2
-Problems were encountered when trying to perform the action.
+\" NAME section
+.Sh NAME
+.Nm scheduler
+.Nd workflow scheduling system using .yaml files
+
+\" SYNOPSIS section
+.Sh SYNOPSIS
+.Nm
+.Op Fl v
+.Ic command
+
+\" DESCRPITION section
+.Sh DESCRIPTION
+.Nm
+aims to provide an easy way to schedule script workflows to run on a consistent schedule using .yaml configuration files.
+.Pp
+Unless --help is given, one of the following commands must be present.
+
+.Bl -tag -width Ds
+.It Ic update\ 
+Updates the schedule crontab using the
+.Xr scheduler-workflow 5
+files stored in the configuration folder.
+
+.It Ic run-workflow Ar name
+Runs the
+.Xr scheduler-workflow 5
+defined in the configuration folder immediately.
+.Nm
+.Ic update\ 
+does not need to be run before this command, as this command will perform a direct search for a file
+.Ar name.yaml
+in the configuration folder.
+
+.It Ic list\ 
+Lists all valid 
+.Xr scheduler-workflow 5
+files found in the configuration directory.
+.El
