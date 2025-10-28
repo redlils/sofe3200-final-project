@@ -37,10 +37,14 @@
 .Nm
 aims to provide an easy way to schedule script workflows to run on a consistent schedule using .yaml configuration files.
 .Pp
-Unless --help is given, one of the following commands must be present.
+Unless 
+.Fl h
+or
+.Fl -help
+is given, one of the following commands must be present.
 
 .Bl -tag -width Ds
-.It Ic update\ 
+.It Ic update ""
 Updates the schedule crontab using the
 .Xr scheduler-workflow 5
 files stored in the configuration folder.
@@ -50,12 +54,12 @@ Runs the
 .Xr scheduler-workflow 5
 defined in the configuration folder immediately.
 .Nm
-.Ic update\ 
+.Ic update ""
 does not need to be run before this command, as this command will perform a direct search for a file
 .Ar name.yaml
 in the configuration folder.
 
-.It Ic list\ 
+.It Ic list ""
 Lists all valid 
 .Xr scheduler-workflow 5
 files found in the configuration directory.
