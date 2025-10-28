@@ -24,11 +24,11 @@ print_help() {
   printf "%s\n" "Usage: $script_name [OPTION...] [COMMAND]
 
 Commands:
-  --update                update the active tasks defined in \$HOME/.config/scheduler
-  --run-workflow <name>   run the <name>.yml workflow in \$HOME/.config/scheduler
-  --list                  list all scheduled tasks
-  --help                  show this help message
-  --version               show the version
+  update                update the active tasks defined in \$HOME/.config/scheduler
+  run-workflow <name>   run the <name>.yml workflow in \$HOME/.config/scheduler
+  list                  list all scheduled tasks
+  help                  show this help message
+  version               show the version
 
 Options:
   -v, --verbose           display extra information while running"
