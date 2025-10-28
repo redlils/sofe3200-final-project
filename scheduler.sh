@@ -43,6 +43,12 @@ print_usage_info() {
   printf "%s\n" "Use $script_name --help or refer to the man page for program usage information"
 }
 
+print_version() {
+  echo "scheduler"
+  echo "Author: Lily Redpath"
+  echo "Version: $version"
+}
+
 # Command handlers
 update() {
   # Find our crontab
@@ -104,11 +110,15 @@ main() {
     if [[ "$arg" == --* ]]; then
       # We have a potential long option!
       # Time to check them!
-      # --verbose (B) check
-      if [ "$arg" == "--verbose" ]; then
-        echo "Found verbose!"
+      if [ "$arg" == "--help" ]; then
+        print_help
+        exit 0
+      elif [ "$arg" == "--verbose" ]; then
         verbose=true
         continue
+      elif [ "$arg" == "--version" ]; then
+        print_version
+        exit 0
       fi
 
       # If we were unable to parse this long option, this must not be a valid option
@@ -118,10 +128,17 @@ main() {
     # WARN: This should be the last check run!
     elif [[ "$arg" == -* ]]; then
       local found_bool_option=false
+      if [[ "$arg" == *h* ]]; then
+        print_help
+        exit 0
+      fi
       if [[ "$arg" == *v* ]]; then
-        echo "Found verbose!"
         verbose=true
         found_bool_option=true
+      fi
+      if [[ "$arg" == *V* ]]; then
+        print_version
+        exit 0
       fi
 
       # If we're unable to find a boolean option out of this then this must not be a valid option!
@@ -133,15 +150,7 @@ main() {
   done
 
   # Handle arguments
-  # --help
-  if [ "$1" = "help" ]; then
-    print_help;
-  elif [ "$1" = "version" ]; then
-    echo "$script_name"
-    echo "Version: $version"
-    exit 0
-  # --add
-  elif [ "$1" = "update" ]; then
+  if [ "$1" = "update" ]; then
     print_verbose "Running scheduler update..."
     update
   elif [ "$1" = "remove" ]; then
