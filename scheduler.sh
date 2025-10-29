@@ -57,6 +57,7 @@ update() {
   fi
 
   print_verbose "Clearing old crontab via 'echo \$crontab_header > /etc/cron.d/scheduler'"
+  echo "==> Clearing old crontab"
   sudo -s crontab_header="$crontab_header" crontab_location="$crontab_location" <<'END-OF-SUDO'
   echo $crontab_header > $crontab_location
 END-OF-SUDO
@@ -80,7 +81,7 @@ END-OF-SUDO
 
       # escalate to allow writing to /etc/cron.d/
       sudo -s schedule="$schedule" file="$file" crontab_location="$crontab_location" <<'END-OF-SUDO'
-      echo $(echo "$schedule" | tr --d '"') "$SUDO_USER" scheduler run-workflow "$(basename "$file" ".yaml") >> $crontab_location
+      echo $(echo "$schedule" | tr --d '"') "$SUDO_USER" scheduler run-workflow "$(basename "$file" ".yaml")" >> $crontab_location
 END-OF-SUDO
       # de-escalate sudo permissions
       sudo -k
@@ -92,6 +93,7 @@ END-OF-SUDO
 
 run_workflow() {
   echo "run_workflow"
+  notify-send "bark"
 }
 
 list() {
@@ -127,25 +129,24 @@ main() {
     # Attempt to parse out boolean short options
     # WARN: This should be the last check run!
     elif [[ "$arg" == -* ]]; then
-      local found_bool_option=false
-      if [[ "$arg" == *h* ]]; then
-        print_help
-        exit 0
-      fi
-      if [[ "$arg" == *v* ]]; then
-        verbose=true
-        found_bool_option=true
-      fi
-      if [[ "$arg" == *V* ]]; then
-        print_version
-        exit 0
-      fi
-
-      # If we're unable to find a boolean option out of this then this must not be a valid option!
-      if [ "$found_bool_option" == "false" ]; then
-        print_invalid_option "$arg"
-        exit 1
-      fi
+      # Loop through each argument and exit early if there's an invalid argument
+      for (( i=0; i<${#arg}; i++ )); do
+        char=${arg:$i:1}
+        if [ "$char" == "-" ]; then
+          continue
+        elif [ "$char" == "h" ]; then
+          print_help
+          exit 0
+        elif [ "$char" == "v" ]; then
+          verbose=true
+        elif [ "$char" == "V" ]; then
+          print_version
+          exit 0
+        else
+          print_invalid_option "-$char"
+          exit 1
+        fi
+      done
     fi
   done
 
@@ -162,6 +163,7 @@ main() {
     remove-task
   else
     echo ":3"
+    notify-send "bark"
   fi
 }
 
