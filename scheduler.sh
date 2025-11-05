@@ -2,11 +2,12 @@
 
 # NOTE: REQUIRED PACKAGES:
 # - mikefarah/yq
+# - pcregrep
 
 # Globals
 script_name=$(basename "$0") # Use basename for if this script is being read through a symlink/a differenct directory
 script_full_path=$(which scheduler || "$0")
-version=$(git tag --points-at HEAD)+$(git rev-parse --short HEAD)
+version=$(git tag --points-at HEAD 2> /dev/null)+$(git rev-parse --short HEAD 2> /dev/null)
 crontab_location="/etc/cron.d/scheduler"
 crontab_shell="SHELL=/bin/bash"
 crontab_path="PATH=$PATH"
@@ -25,7 +26,7 @@ reset=$(tput sgr0)
 
 shopt -s extglob
 
-# TODO: Actually create a --verbose option to toggle this properly!
+# Verbose output
 verbose=false
 
 print_verbose() {
@@ -34,7 +35,7 @@ print_verbose() {
   fi
 }
 
-# Functions
+# Common outputs
 print_help() {
   printf "%s\n" "Usage: $script_name [OPTION...] [COMMAND]
 
@@ -167,7 +168,12 @@ run_workflow() {
 }
 
 list() {
- echo "list"
+  mapfile -t registered_entries < <(pcregrep -M -o1 "$script_name -v run-workflow (\w*\.yaml)" "$crontab_location")
+  echo "${bold}Registered entries in $crontab_location:${reset}"
+  for reg_entry in "${registered_entries[@]}"
+  do
+    echo "${bold}:: ${reset}$reg_entry"
+  done
 }
 
 main() {
@@ -202,15 +208,15 @@ main() {
     shift
   done
 
-  if [ "${#prepared_commands[@]}" -gt 1 ]; then
+  if [ "${#prepared_commands[@]}" -gt 1 ] || [ "${#prepared_commands[@]}" -eq 0 ]; then
     echo uh oh!
     exit 1
   fi
 
   command=${prepared_commands[0]}
   case $command in
-    list)           echo ":3" ;;
-    run-workflow)   run_workflow ;;
+    list)           list ;;
+    run-workflow)   run_workflow "${workflow[0]}" ;;
     update)         update ;;
     *)              echo "how the fluff did we get here" ;;
   esac
