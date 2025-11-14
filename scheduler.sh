@@ -72,30 +72,35 @@ print_version() {
 
 # Helper methods
 validate_workflow() {
-    # Validate yaml schema
-    # WARN: The workflow is *not* being parsed here! The yaml is 
-    # solely being checked to see if the correct paths exist.
-    #
-    # INFO: schedule-workflow.yaml format
-    # Schema (required paths start with a *):
-    # *.schedule            Valid cron schedule format (validity is not checked upon registration)
-    # *.tasks               List of tasks the workflow runner will run
-    #   *.<task-name>       Definition of a new task to run
-    #     .shell            Fully qualified path to a shell that will run this task (defaults to /bin/bash)
-    #     .env              List of environment variables the workflow runner will use
-    #       .<env-var>      KVP of an environment variable and it's associated value
-    #     *.steps           List of shell commands the workflow runner will execute
-    #       *.<step>        A shell command
+  # is this file even here?
+  if [ -f "$HOME/.config/scheduler/$1.yaml" ]; then
+    return 1
+  fi
 
-    if  ! yq ".schedule"          "$1"  | { ! grep "null"; } > /dev/null || # Check ".schedule" exists
-        ! yq ".tasks"             "$1"  | { ! grep "null"; } > /dev/null || # Check ".tasks" exists
-        ! yq ".tasks.*"           "$1"  | { ! grep "null"; } > /dev/null || # Check there's at least 1 task specified
-        ! yq ".tasks.*.steps"     "$1"  | { ! grep "null"; } > /dev/null || # Check that the task has a steps section
-        ! yq ".tasks.*.steps[0]"  "$1"  | { ! grep "null"; } > /dev/null ;  # Check that the task has at least 1 step
-    then
-      return 1
-    fi
-    return 0
+  # Validate yaml schema
+  # WARN: The workflow is *not* being parsed here! The yaml is 
+  # solely being checked to see if the correct paths exist.
+  #
+  # INFO: schedule-workflow.yaml format
+  # Schema (required paths start with a *):
+  # *.schedule            Valid cron schedule format (validity is not checked upon registration)
+  # *.tasks               List of tasks the workflow runner will run
+  #   *.<task-name>       Definition of a new task to run
+  #     .shell            Fully qualified path to a shell that will run this task (defaults to /bin/bash)
+  #     .env              List of environment variables the workflow runner will use
+  #       .<env-var>      KVP of an environment variable and it's associated value
+  #     *.steps           List of shell commands the workflow runner will execute
+  #       *.<step>        A shell command
+
+  if  ! yq ".schedule"          "$1"  | { ! grep "null"; } > /dev/null || # Check ".schedule" exists
+      ! yq ".tasks"             "$1"  | { ! grep "null"; } > /dev/null || # Check ".tasks" exists
+      ! yq ".tasks.*"           "$1"  | { ! grep "null"; } > /dev/null || # Check there's at least 1 task specified
+      ! yq ".tasks.*.steps"     "$1"  | { ! grep "null"; } > /dev/null || # Check that the task has a steps section
+      ! yq ".tasks.*.steps[0]"  "$1"  | { ! grep "null"; } > /dev/null ;  # Check that the task has at least 1 step
+  then
+    return 1
+  fi
+  return 0
 }
 
 # Command handlers
@@ -120,7 +125,7 @@ END-OF-SUDO
 
   if [ ! -d "$HOME"/.config/scheduler ]; then
     print_verbose "$HOME/.config/scheduler directory not found"
-    print_verbose "Creating $HOME/.config/scheduler"
+  print_verbose "Creating $HOME/.config/scheduler"
     mkdir -p "$HOME"/.config/scheduler
   else
     print_verbose "Found configuration directory"
@@ -134,6 +139,8 @@ END-OF-SUDO
     exit 0 # Exit 0 is okay here because while the crontab was not updated, the program ran as expected.
   fi
 
+  local added_workflows=()
+  
   # Loop through our configuration files in $HOME/.config/scheduler and add them to the crontab
   for file in "$HOME"/.config/scheduler/*.yaml; do
     local schedule=""
@@ -148,6 +155,8 @@ END-OF-SUDO
 
       echo "${green}${bold}::${reset}${bold} Found workflow '$file'${reset}"
 
+      added_workflows+=("$file")
+
       schedule=$(yq ".schedule" "$file")
 
       # escalate to allow writing to /etc/cron.d/
@@ -160,15 +169,66 @@ END-OF-SUDO
       print_verbose "Invalid .yaml file '$file'"
     fi
   done
+
+  printf "%s\n" "${bold}:: Successfully updated ${script_name} with all valid workflows."
 }
 
+workflow_stack=()
+
+# @param Full workflow path
+# @param Current task
+get_dependencies() {
+  readarray -t depends < <(yq ".tasks.$2.depends-on.[] | @sh" "$1")
+  print_verbose "depend-on for $2: \"${depends[*]}\" (${#depends[@]})"
+  if printf "%s\0" "${workflow_stack[@]}" | grep -Fxz -- "$2" > /dev/null; then
+    return 0;
+  else
+    workflow_stack=("$2" "${workflow_stack[@]}")
+  fi
+  if [[ ${#depends[@]} -gt 0 ]]; then
+    for dependency in "${depends[@]}"; do
+      get_dependencies "$1" "$dependency"
+    done
+  fi
+}
+
+# TODO: man.
 run_workflow() {
-  echo "run_workflow"
-  notify-send "bark"
+  local full_workflow_path="$HOME/.config/scheduler/$1.yaml"
+
+  # Check to see if the workflow even exists in the first place
+  if [ ! -e "$full_workflow_path" ]; then
+    printf "%s\n" "${bold}${red}==>${reset}${bold} Workflow '$1' ($full_workflow_path) does not exist on disk!"
+    exit 2
+  fi
+  
+  # Validate the workflow that's being run to ensure it's a valid workflow.
+  printf "%s\n" "${bold}${blue}==>${reset}${bold} Validating workflow '$1' ($full_workflow_path)"
+  if ! validate_workflow "$HOME/.config/scheduler/$1.yaml"; then
+    printf "%s\n" "${bold}${red}::${reset}${bold} Invalid workflow '$1'!"
+    exit 2
+  fi
+
+  # The workflow's **schema** has been validated by this point
+  # NOTE: The actual commands may potentially be invalid, but we as the scheduler program don't care about the user's command mistakes.
+  
+  # Setup list of tasks
+  readarray -t tasks < <(yq '.tasks.[] | path | omit([0]) | join("") | @sh' "$full_workflow_path")
+
+  # Create workflow stack to define running order of tasks
+  # Using workflow_stack variable as bash can't return anything except a number between 0-255.........
+  printf "%s\n" "${bold}${blue}==>${reset}${bold} Determining task execution order...${reset}"
+  for task in "${tasks[@]}"; do
+    get_dependencies "$full_workflow_path" "$task"
+  done
+  printf "%s\n" "${bold}${green}==>${reset}${bold} Determined execution order:${reset}"
+  for task in "${workflow_stack[@]}"; do
+    printf "    %s\n" "${bold}$task${reset}"
+  done
 }
 
 list() {
-  mapfile -t registered_entries < <(pcregrep -M -o1 "$script_name -v run-workflow (\w*\.yaml)" "$crontab_location")
+  readarray -t registered_entries < <(pcregrep -M -o1 "$script_name -v run-workflow (\w*\.yaml)" "$crontab_location")
   echo "${bold}Registered entries in $crontab_location:${reset}"
   for reg_entry in "${registered_entries[@]}"
   do
