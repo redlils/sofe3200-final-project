@@ -7,6 +7,10 @@
 # Globals
 script_name=$(basename "$0") # Use basename for if this script is being read through a symlink/a differenct directory
 script_full_path=$(which scheduler || "$0")
+script_real_path=$(readlink "$script_full_path" || "$script_full_path")
+
+cd "$(dirname "$script_real_path")" || exit
+
 version=$(git tag --points-at HEAD 2> /dev/null)+$(git rev-parse --short HEAD 2> /dev/null)
 crontab_location="/etc/cron.d/scheduler_$USER"
 crontab_shell="SHELL=/bin/bash"
@@ -168,6 +172,8 @@ END-OF-SUDO
 
       schedule=$(yq ".schedule" "$file")
 
+      print_verbose "Adding $file to $crontab_location"
+  
       # escalate to allow writing to /etc/cron.d/
       sudo -s schedule="$schedule" file="$file" crontab_location="$crontab_location" script_full_path="$script_full_path" <<'END-OF-SUDO'
       echo $(echo "$schedule" | tr --d '"') "$SUDO_USER $script_full_path -v run-workflow $(basename ${file%.*}) > /home/$SUDO_USER/scheduler.log" >> $crontab_location
@@ -259,7 +265,7 @@ run_workflow() {
 }
 
 list() {
-  readarray -t registered_entries < <(pcregrep -M -o1 "$script_name -v run-workflow (\w*\.yaml)" "$crontab_location")
+  readarray -t registered_entries < <(pcregrep -M -o1 "$script_name -v run-workflow (\w*)" "$crontab_location")
   echo "${bold}Registered entries in $crontab_location:${reset}"
   for reg_entry in "${registered_entries[@]}"
   do
