@@ -1,5 +1,9 @@
 # Scheduler
 
+> [!INFO]
+> This project was created for the SOFE3200 Fall 2025 course at Ontario Tech University.
+> Authors: Lily Redpath (100862425)
+
 A workflow scheduling application written in Bash for Linux systems.
 
 ## Objective
@@ -228,3 +232,67 @@ This flag will display extra information about the program as it's running.
 **-V | --version**
 
 This flag will display the current version of `scheduler`. No other command will be run if this flag is passed.
+
+## Errors
+
+This program returns different exit codes depending on how the program completed running.
+
+| Exit Code | Description                                  |
+| --------- | -------------------------------------------- |
+| 0         | Everything ran smoothly                      |
+| 1         | There was an error parsing the program input |
+| 2         | There was an error during execution          |
+
+## Script Structure
+
+The script is split into multiple functions:
+
+#### `print_verbose(string)`
+
+Prints extra text if the verbose variable is set to true.
+
+#### `print_help()`
+
+Prints the help menu.
+
+#### `print_invalid_option(string)`
+
+Prints an invalid option message using the inputted option.
+
+#### `print_usage_info()`
+
+Prints script usage information.
+
+#### `print_version()`
+
+Prints the script's version.
+
+#### `test_yaml_for_value(string, string)`
+
+Tests a specified YAML file to check if a specified path exists.
+
+#### `validate_workflow(string)`
+
+Validates the schema of a specified workflow file. All required sections are checked to see if they exist.
+
+This function does _not_ check if the actual values at the paths are valid.
+
+#### `update()`
+
+Updates the user's scheduler crontab with the workflows defined in `$HOME/.config/scheduler`. Activated with `scheduler update`
+
+#### `get_dependencies(string, string)`
+
+Recursive function to generate a stack of tasks for a workflow based on `depends-on` values
+
+#### `run_workflow(string)`
+
+Runs a workflow with the specified name. Activated with `scheduler run-workflow <workflow>`
+
+#### `list()`
+
+Lists the workflows defined in the user's scheduler crontab. Activated with `scheduler list`
+
+#### `main()`
+
+Main entry point for the script. Handles user input and runs the associated function.
