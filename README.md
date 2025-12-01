@@ -2,6 +2,7 @@
 
 > [!NOTE]
 > This project was created for the SOFE3200 Fall 2025 course at Ontario Tech University.
+>
 > Authors: Lily Redpath (100862425)
 
 A workflow scheduling application written in Bash for Linux systems.
